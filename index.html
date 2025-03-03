@@ -7,7 +7,7 @@
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; margin: 0; box-sizing: border-box; }
         .container { display: flex; flex-direction: column; gap: 20px; }
-        .selected { width: 95%; border: 1px solid #ddd; padding: 10px; text-align: center; background: #f9f9f9; box-sizing: border-box; }
+        .selected { width: 50%; border: 1px solid #ddd; padding: 10px; text-align: center; background: #f9f9f9; box-sizing: border-box; }
         .selected img { width: 100%; max-width: 250px; margin: 10px 0; border-radius: 8px; }
         .search-section { width: 95%; }
         .search-results { margin-top: 10px; width: 100%; }
@@ -66,8 +66,8 @@
     const apiKey = "3ce9bf760c181a5a4283fc37f6b153d8"; 
     const radarrApiKey = "578de20b26c0407f9976f93fe748e6b1";  
     const sonarrApiKey = "2dc6ff408d6042f692fcf2ac51a498b5";  
-    const radarrUrl = "https://140.177.103.179:7879/api/v3";  
-    const sonarrUrl = "https://140.177.103.179:9898/api/v3";  
+    const radarrUrl = "https://140.177.103.179:7879/api/v3";
+    const sonarrUrl = "https://140.177.103.179:9898/api/v3";
     const imageBaseUrl = "https://image.tmdb.org/t/p/w300"; 
 
     function searchTMDb() {
