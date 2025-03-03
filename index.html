@@ -101,7 +101,7 @@
                             resultDiv.innerHTML = `
                                 <img class="poster" src="${posterPath}" alt="Poster">
                                 <div>
-                                    <strong>${item.title || item.name} (${item.release_date?.split("-")[0] || item.first_air_date?.split("-")[0] || "N/A"})</strong> ${label}
+                                    <strong>${item.title || item.name}</strong> ${label}
                                 </div>
                             `;
 
@@ -113,21 +113,22 @@
                 .catch(error => console.error("Error fetching TMDb data:", error));
         }
 
-        async function selectItem(item, posterPath) {
+        function selectItem(item, posterPath) {
             document.getElementById("selectedContainer").style.display = "block";
             document.getElementById("selectedTitle").innerText = `${item.title || item.name}`;
             document.getElementById("selectedPoster").src = posterPath;
             document.getElementById("selectedType").innerText = item.media_type === "movie" ? "Movie" : "TV Show";
-
             document.getElementById("title").value = item.title || item.name;
             document.getElementById("type").value = item.media_type;
             document.getElementById("tmdbId").value = item.id;
-            
-            window.scrollTo({ top: 0, behavior: "smooth" });
-
-            if (item.media_type === "tv") fetchTVDBId(item.id);
         }
 
+        document.getElementById("submitRequest").addEventListener("click", submitRequest);
+
+        async function submitRequest(event) {
+            event.preventDefault();
+            alert("✅ Request submitted! (API call simulation)");
+        }
     </script>
 
 </body>
