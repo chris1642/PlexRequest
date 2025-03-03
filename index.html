@@ -54,8 +54,8 @@
         const apiKey = "3ce9bf760c181a5a4283fc37f6b153d8"; 
         const radarrApiKey = "578de20b26c0407f9976f93fe748e6b1";  
         const sonarrApiKey = "2dc6ff408d6042f692fcf2ac51a498b5";  
-        const radarrUrl = "http://localhost:7878/api/v3";  
-        const sonarrUrl = "http://localhost:8989/api/v3";  
+        const radarrUrl = "http://140.177.103.179:7878/api/v3";  
+        const sonarrUrl = "http://140.177.103.179:8989/api/v3";  
         const imageBaseUrl = "https://image.tmdb.org/t/p/w300"; 
 
         document.getElementById("search").addEventListener("keypress", function(event) {
@@ -139,19 +139,11 @@
             const url = type === "movie" ? `${radarrUrl}/movie` : `${sonarrUrl}/series`;
             const apiKey = type === "movie" ? radarrApiKey : sonarrApiKey;
 
-            const payload = {
-                title: document.getElementById("title").value,
-                qualityProfileId: 4,
-                rootFolderPath: type === "movie" ? "G:\\Plex Movies" : "G:\\Plex TV Shows",
-                monitored: true,
-                tmdbId: document.getElementById("tmdbId").value
-            };
-
             try {
                 await fetch(url, {
                     method: "POST",
                     headers: { "X-Api-Key": apiKey, "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ title: document.getElementById("title").value })
                 });
 
                 alert("Request submitted successfully! ✅");
