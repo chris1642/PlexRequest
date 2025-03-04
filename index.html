@@ -169,6 +169,7 @@
             payload.languageProfileId = 1;  
         } else {
             payload.tmdbId = formData.tmdbId;
+            payload.addOptions = { searchForMovie: true, monitor: "movieOnly", searchForCutoffUnmet: true };
         }
 
         const url = formData.type === "movie" ? `${radarrUrl}/movie` : `${sonarrUrl}/series`;
