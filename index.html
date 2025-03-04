@@ -69,6 +69,7 @@
     const radarrUrl = "https://140.177.103.179:7879/api/v3";
     const sonarrUrl = "https://140.177.103.179:9898/api/v3";
     const imageBaseUrl = "https://image.tmdb.org/t/p/w300"; 
+    const formspreeUrl = "https://formspree.io/f/myzkrnrk"; // Replace with your Formspree endpoint
 
     function searchTMDb() {
         const query = document.getElementById("search").value;
@@ -164,8 +165,8 @@
             }
             payload.tvdbId = formData.tvdbId;
             payload.addOptions = { searchForMissingEpisodes: true, searchForCutoffUnmetEpisodes: true };
-            payload.seriesType = "standard";  // Ensuring proper Sonarr formatting
-            payload.languageProfileId = 1;  // Assuming English
+            payload.seriesType = "standard";  
+            payload.languageProfileId = 1;  
         } else {
             payload.tmdbId = formData.tmdbId;
         }
@@ -176,6 +177,7 @@
         console.log(`Making POST request to ${url}`);
         console.log("Payload:", payload);
 
+        // ✅ Send to Sonarr or Radarr
         try {
             const response = await fetch(url, {
                 method: "POST",
@@ -186,17 +188,32 @@
             const responseData = await response.json();
             console.log("Response:", responseData);
 
-            if (response.ok) {
-                alert("Request submitted successfully!");
-            } else {
+            if (!response.ok) {
                 alert(`Failed to submit request: ${responseData.message || "Unknown error"}`);
+                return;
             }
         } catch (error) {
             console.error("Error submitting request:", error);
             alert("There was an error submitting your request.");
+            return;
         }
-    });
 
+        // ✅ Send Email Form in Background (No Popup)
+        try {
+            console.log("📧 Sending email request to Formspree...");
+            await fetch(formspreeUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            console.log("✅ Email sent successfully!");
+        } catch (error) {
+            console.error("❌ Error sending email:", error);
+        }
+
+        // ✅ Show Success Alert
+        alert("✅ Your request has been submitted and if available, should automatically download shortly!");
+    });
 </script>
 
 </body>
