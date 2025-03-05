@@ -71,41 +71,65 @@
     const imageBaseUrl = "https://image.tmdb.org/t/p/w300"; 
     const formspreeUrl = "https://formspree.io/f/myzkrnrk"; // Replace with your Formspree endpoint
 
-    function searchTMDb() {
-        const query = document.getElementById("search").value;
-        if (!query) return;
+async function searchTMDb() {
+    const query = document.getElementById("search").value;
+    if (!query) return;
 
-        fetch(`https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                const resultsDiv = document.getElementById("results");
-                resultsDiv.innerHTML = "";
+    try {
+        const response = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`);
+        const data = await response.json();
 
-                data.results.forEach(item => {
-                    if (item.media_type === "movie" || item.media_type === "tv") {
-                        const resultDiv = document.createElement("div");
-                        resultDiv.className = "result";
+        const resultsDiv = document.getElementById("results");
+        resultsDiv.innerHTML = "";
 
-                        const posterPath = item.poster_path ? imageBaseUrl + item.poster_path : "https://via.placeholder.com/100x150?text=N/A";
+        for (const item of data.results) {
+            if (item.media_type === "movie" || item.media_type === "tv") {
+                let director = "Unknown Director";
+                
+                if (item.media_type === "movie") {
+                    director = await fetchDirector(item.id);
+                }
 
-                        const label = item.media_type === "movie"
-                            ? `<span class="label movie-label">Movie</span>`
-                            : `<span class="label tv-label">TV Show</span>`;
+                const resultDiv = document.createElement("div");
+                resultDiv.className = "result";
 
-                        resultDiv.innerHTML = `
-                            <img class="poster" src="${posterPath}" alt="Poster">
-                            <div>
-                                <strong>${item.title || item.name} (${item.release_date?.split("-")[0] || item.first_air_date?.split("-")[0] || "N/A"})</strong> ${label}
-                            </div>
-                        `;
+                const posterPath = item.poster_path ? imageBaseUrl + item.poster_path : "https://via.placeholder.com/100x150?text=N/A";
 
-                        resultDiv.onclick = () => selectItem(item, posterPath);
-                        resultsDiv.appendChild(resultDiv);
-                    }
-                });
-            })
-            .catch(error => console.error("Error fetching TMDb data:", error));
+                const label = item.media_type === "movie"
+                    ? `<span class="label movie-label">Movie</span>`
+                    : `<span class="label tv-label">TV Show</span>`;
+
+                resultDiv.innerHTML = `
+                    <img class="poster" src="${posterPath}" alt="Poster">
+                    <div>
+                        <strong>${item.title || item.name} (${item.release_date?.split("-")[0] || item.first_air_date?.split("-")[0] || "N/A"})</strong>
+                        ${item.media_type === "movie" ? `<p>Director: ${director}</p>` : ""}
+                        ${label}
+                    </div>
+                `;
+
+                resultDiv.onclick = () => selectItem(item, posterPath);
+                resultsDiv.appendChild(resultDiv);
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching TMDb data:", error);
     }
+}
+
+// Fetch director's name for a movie
+async function fetchDirector(movieId) {
+    try {
+        const response = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${apiKey}`);
+        const data = await response.json();
+        const director = data.crew.find(person => person.job === "Director");
+        return director ? director.name : "Unknown Director";
+    } catch (error) {
+        console.error(`Error fetching director for movie ID ${movieId}:`, error);
+        return "Unknown Director";
+    }
+}
+
 
     async function selectItem(item, posterPath) {
         document.getElementById("selectedContainer").style.display = "block";
