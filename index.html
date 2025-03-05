@@ -186,36 +186,42 @@ try {
         body: JSON.stringify(payload)
     });
 
+    let responseData;
+    
+    try {
+        responseData = await response.json(); // Read response once
+        console.log("API Response:", responseData);
+    } catch (error) {
+        console.error("Error parsing JSON response:", error);
+        responseData = null; // Handle non-JSON responses
+    }
+
     if (!response.ok) {
         let errorMessage = "Unknown error occurred.";
 
-        try {
-            const responseData = await response.json();
-            console.log("Error response:", responseData);
+        if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].errorMessage) {
+            // Handle Sonarr-style array errors
+            errorMessage = responseData[0].errorMessage.includes("already been added")
+                ? "This title has already been requested by someone. If not already available in Plex, it should be shortly!"
+                : responseData[0].errorMessage;
 
-            if (responseData.message) {
-                if (responseData.message.includes("already been added")) {
-                    errorMessage = "This title has already been added to the library or request queue.";
-                } else {
-                    errorMessage = responseData.message;
-                }
-            }
-        } catch (error) {
-            console.error("Error parsing response:", error);
+        } else if (responseData && responseData.message) {
+            // Handle Radarr-style object errors
+            errorMessage = responseData.message.includes("already been added")
+                ? "This title has already been requested by someone. If not already available in Plex, it should be shortly!"
+                : responseData.message;
         }
 
         alert(`Failed to submit request: ${errorMessage}`);
         return;
     }
 
-    const responseData = await response.json();
-    console.log("Response:", responseData);
-
 } catch (error) {
     console.error("Error submitting request:", error);
     alert("There was an error submitting your request.");
     return;
 }
+
 
         // ✅ Send Email Form in Background (No Popup)
         try {
