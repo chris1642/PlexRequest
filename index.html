@@ -191,6 +191,7 @@ async function fetchDirector(movieId) {
             payload.addOptions = { searchForMissingEpisodes: true, searchForCutoffUnmetEpisodes: true };
             payload.seriesType = "standard";  
             payload.languageProfileId = 1;  
+            payload.seasonFolder = true;
         } else {
             payload.tmdbId = formData.tmdbId;
             payload.addOptions = { searchForMovie: true, monitor: "movieOnly", searchForCutoffUnmet: true };
