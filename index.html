@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request a Movie/TV Show</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; margin: 0; box-sizing: border-box; }
+        .container { display: flex; flex-direction: column; gap: 20px; }
+        .selected { width: 100%; border: 1px solid #ddd; padding: 10px; text-align: center; background: #f9f9f9; box-sizing: border-box; }
+        .selected img { width: 100%; max-width: 250px; margin: 10px 0; border-radius: 8px; }
+        .search-section { width: 100%; }
+        #searchForm {display: flex; flex-direction: column; gap: 10px; width: 100%; }
+#searchForm input[type="text"],
+#searchForm button {width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; }
+        .search-results { margin-top: 10px; width: 100%; }
+        .result { cursor: pointer; padding: 10px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .result:hover { background-color: #f0f0f0; }
+        .poster { width: 50px; height: auto; object-fit: cover; border-radius: 5px; }
+        .label { padding: 2px 6px; font-size: 12px; border-radius: 4px; color: white; }
+        .movie-label { background-color: #007bff; }
+        .tv-label { background-color: #28a745; }
+        .submit-btn { margin-top: 10px; padding: 12px; font-size: 16px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; width: 100%; }
+        .submit-btn:hover { background: #0056b3; }
+        input, select, button { width: 100%; max-width: 100%; padding: 10px; margin-top: 5px; font-size: 16px; }
+        @media (min-width: 768px) {
+            .container { flex-direction: row; }
+            .selected, .search-section { flex: 1; }
+            .search-results { max-width: 100%; }
+            .poster { width: 75px; }
+        }
+    </style>
+</head>
+<body>
+<header style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
+    <img 
+      src="https://i.redd.it/5x93lknmuaw81.jpg" 
+      alt="Plex Logo Banner" 
+      style="max-height: 80px; width: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 16px;"
+    >
+    <h1 style="font-size: 2rem; font-weight: 700; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f1f1f; margin: 0;">
+      Make a Plex Request
+    </h1>
+    <p style="color: #555; font-size: 0.9rem; margin-top: 10px;">
+      Search for your favorite Movies or TV Shows to automatically download to our Plex Server!
+    </p>
+</header>
+
+<div class="search-section">
+  <form id="searchForm">
+    <input type="text" id="search" placeholder="Enter a movie or TV show name">
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+<div class="selected" id="selectedContainer" style="display: none;">
+  <h3>Selected Title:</h3>
+  <img id="selectedPoster" src="" alt="Poster">
+  <p id="selectedTitle"></p>
+  <span id="selectedType" class="label"></span>
+
+  <form id="requestForm">
+    <input type="hidden" id="title" name="title">
+    <input type="hidden" id="type" name="type">
+    <input type="hidden" id="tmdbId" name="tmdbId">
+    <input type="hidden" id="tvdbId" name="tvdbId">
+    <button type="submit" class="submit-btn">Submit Request</button>
+  </form>
+</div>
+
+<div id="results" class="search-results"></div>
+
+<script>
+const azureFunctionUrl = "https://plex-request-api.azurewebsites.net/api/apiRequestHandler";
+const imageBaseUrl = "https://image.tmdb.org/t/p/w300";
+let selectedItem = {};
+
+async function searchTMDb() {
+  const query = document.getElementById("search").value;
+  if (!query) return;
+
+  const response = await fetch(azureFunctionUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "search", query })
+  });
+
+  const data = await response.json();
+  const results = document.getElementById("results");
+  results.innerHTML = "";
+
+  data.results.forEach(item => {
+    if (item.media_type === "movie" || item.media_type === "tv") {
+      const poster = item.poster_path ? `${imageBaseUrl}${item.poster_path}` : "https://via.placeholder.com/100x150?text=N/A";
+      const labelClass = item.media_type === "movie" ? "movie-label" : "tv-label";
+      const labelText = item.media_type === "movie" ? "Movie" : "TV Show";
+
+      const div = document.createElement("div");
+      div.className = "result";
+      div.innerHTML = `
+        <img class="poster" src="${poster}" alt="Poster">
+        <div>
+          <strong>${item.title || item.name} (${(item.release_date || item.first_air_date || '').split("-")[0] || 'N/A'})</strong>
+          <div class="label ${labelClass}">${labelText}</div>
+        </div>
+      `;
+      div.onclick = () => selectItem(item, poster);
+      results.appendChild(div);
+    }
+  });
+}
+
+function selectItem(item, posterPath) {
+  selectedItem = item;
+  document.getElementById("selectedContainer").style.display = "block";
+  document.getElementById("selectedTitle").innerText = `${item.title || item.name} (${(item.release_date || item.first_air_date || '').split("-")[0]})`;
+  document.getElementById("selectedPoster").src = posterPath;
+  document.getElementById("selectedType").innerText = item.media_type === "movie" ? "Movie" : "TV Show";
+  document.getElementById("selectedType").className = `label ${item.media_type === "movie" ? "movie-label" : "tv-label"}`;
+}
+
+async function submitSelection() {
+  const type = selectedItem.media_type;
+  const tmdbId = selectedItem.id;
+  const title = selectedItem.title || selectedItem.name;
+  let tvdbId = null;
+
+  if (type === "tv") {
+    const res = await fetch(azureFunctionUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "getTvdbId", tmdbId })
+    });
+    const data = await res.json();
+    tvdbId = data.tvdbId;
+    if (!tvdbId) {
+      alert("TVDB ID not found");
+      return;
+    }
+  }
+
+  try {
+    const submitRes = await fetch(azureFunctionUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "submitRequest",
+        title,
+        type,
+        tmdbId,
+        tvdbId
+      })
+    });
+
+    const resultText = await submitRes.text();
+    let result;
+
+    try {
+      result = JSON.parse(resultText);
+    } catch {
+      result = { message: resultText };
+    }
+
+    if (submitRes.ok) {
+      alert("✅ Your request has been submitted and if available, should automatically download shortly!");
+    } else {
+      alert(`❌ Failed: ${result?.message || "Unknown error"}`);
+    }
+  } catch (error) {
+    console.error("Submit failed:", error);
+    alert("❌ Submission error. Check the console for details.");
+  }
+}
+  document.getElementById("searchForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    searchTMDb();
+  });
+    document.getElementById("requestForm").addEventListener("submit", function (event) {
+  event.preventDefault(); // Stop page reload
+  submitSelection(); // Call your existing function
+});
+</script>
+</body>
+</html>
